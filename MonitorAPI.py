@@ -4,9 +4,10 @@ import os
 from inspect import currentframe, getframeinfo
 import xlwt
 import xlrd
-from datetime import date
+from datetime import datetime
 import asyncio
 from xlutils.copy import copy as xl_copy
+from datetime import date
 
 path = os.path.dirname(os.path.realpath(__file__))
 
@@ -53,7 +54,6 @@ class monitor:
         secLeft = 3600 - curHour
         minLeft = secLeft / 60
         output = [f"Minutes left until next hour = {round(minLeft)}", secLeft]
-        #print(f"Minutes left until next hour = {minLeft}")
         return output
 
     async def timer(self, sec):
@@ -64,8 +64,6 @@ class monitor:
         self.excWrite(self)
         c.execute(f"UPDATE users SET messages = 0")
 
-
-
     async def timerInf(self):
         while True:
             print("!!!!!!!!!!!!!!!!")
@@ -74,7 +72,6 @@ class monitor:
             await asyncio.sleep(3600)
             c.execute(f"UPDATE users SET messages = 0")
             self.excWrite(self)
-
 
     def checkUser(self, uid, name):
         try:
@@ -140,26 +137,63 @@ class monitor:
             output = c2.fetchall()
         return output
 
+    def parseTime(self):
+        now = datetime.utcnow()
+        if len(str(now.hour)) < 2:
+            hour = "0" + str(now.hour)
+        else:
+            hour = now.hour
+        if len(str(now.minute)) < 2:
+            minute = "0" + str(now.minute)
+        else:
+            minute = now.minute
+        if len(str(now.second)) < 2:
+            second = "0" + str(now.second)
+        else:
+            second = now.second
+        return f"{hour}:{minute}:{second} [UTC]"
+
     def excWrite(self):
         items = self.getAllUsers(self, 1)
 
         hour = round(round(time.time()) / (60 * 60))
+        hour = hour % 24
 
         oldSheet = xlrd.open_workbook('output.xls', formatting_info=True)
         book = xl_copy(oldSheet)
 
         sheet = book.add_sheet(f"Hour {hour}")
         num = 1
-        sheet.write(0, 0, "Name")
-        sheet.write(0, 1, "Messages")
+
+        while(num < 96):
+            if num % 4 == 0:
+                sheet.write(0, num, "Time (IN UTC)")
+                sheet.write(0, (num + 1), "Name")
+                sheet.write(0, (num + 2), "Messages")
+                num += 1
+            else:
+                num += 1
+
         for x in items:
-            sheet.write(num, 0, x[1])
-            sheet.write(num, 1, x[4])
+            if num == 1:
+                sheet.write(num, 0, self.parseTime(self))
+            sheet.write(num, hour, x[1])
+            sheet.write(num, (hour + 1), x[4])
             num += 1
         book.save("output.xls")
+        if hour % 24 == 0:
+            asyncio.sleep(5)
+            oldSheet = xlrd.open_workbook('output.xls', formatting_info=True)
+            book = xl_copy(oldSheet)
+            thing = datetime.utcnow()
+            day = (f"{thing.day}-{thing.month}-{thing.year}")
+
+            sheet = book.add_sheet(f"Day {day}")
+            sheet.write(0, 0, f"{day}")
+            book.save("output.xls")
 
     async def startTimer(self):
-        time = self.getHour(self)
+        time = [0, 2]  # self.getHour(self)
         await self.timer(self, time[1])
         print("Starting infinite timer")
         await self.timerInf(self)
@@ -173,6 +207,6 @@ class monitor:
             num += 1
         conn2.commit()
 
-
+monitor.parseTime(self=monitor)
 # monitor.getChoice(self=monitor)
-#monitor.excWrite(self=monitor)
+# monitor.excWrite(self=monitor)

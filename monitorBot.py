@@ -1,6 +1,7 @@
 import discord
 from discord.ext import commands
 from MonitorAPI import monitor as m
+from datetime import datetime
 
 staff = [199576000844136448, 395066428409118720, 659226316679413793, 413955398387630080, 269511972393844736,
          132739019007197185, 142088223345213440, 638494850861367296, 429083450322976768, 297061136048848898]
@@ -21,16 +22,19 @@ class MyClient(discord.Client):
         if message.author == self.user:
             return
 
-        if message.author.id in staff or message.author.id in support:
-            if message.author.id == 142088223345213440:
-                userID = 132739019007197185
-            else:
-                userID = message.author.id
-            try:
-                print(f"Checking user: {message.author}")
-                m.checkUser(self=m, uid=userID, name=message.author.name)
-            except () as e:
-                print(e)
+        if message.content.startswith("mon.utctime"):
+            await message.channel.send(m.parseTime(self=m))
+
+#        if message.author.id in staff or message.author.id in support:
+#            if message.author.id == 142088223345213440:
+#                userID = 132739019007197185
+#            else:
+#                userID = message.author.id
+#            try:
+#                print(f"Checking user: {message.author}")
+#                m.checkUser(self=m, uid=userID, name=message.author.name)
+#            except () as e:
+#                print(e)
 
         if message.author.id == 638494850861367296:
             if message.content.startswith("mon.output"):
@@ -39,10 +43,12 @@ class MyClient(discord.Client):
                     await message.channel.send("Writing complete, check server files for output.", delete_after=10)
                 except PermissionError:
                     await message.channel.send("Cannot output whilst file is open on client. Close it and try again.", delete_after=10)
+#
+#            if message.content.startswith("mon.time"):
+#                timeLeft = m.getHour(self=m)
+#                await message.channel.send(timeLeft[0])
 
-            if message.content.startswith("mon.time"):
-                timeLeft = m.getHour(self=m)
-                await message.channel.send(timeLeft[0])
+
 
 
 client = MyClient()
