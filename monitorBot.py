@@ -1,3 +1,5 @@
+# The actual discord bot to handle the input, everything will be parsed and forwarded to MonitorAPI.py for further processing
+
 import discord
 from discord.ext import commands
 from MonitorAPI import monitor as m
